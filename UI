@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fantasy RPG UI Kit - Lumivara Style</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #1a2436;
+      background-image: radial-gradient(circle at center, #2c3e5e 0%, #111827 100%);
+      color: #2b2118;
+      user-select: none;
+    }
+
+    /* กรอบหน้าต่างหลักสไตล์ RPG (พื้นครีมพาร์ชเมนต์ + ขอบทอง + ขอบในน้ำเงิน) */
+    .rpg-window {
+      background-color: #f7f1e1;
+      border: 3px solid #d4af37;
+      box-shadow: 
+        0 0 0 2px #1c315e,
+        0 10px 25px rgba(0, 0, 0, 0.6),
+        inset 0 0 15px rgba(212, 175, 55, 0.25);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* แถบหัวข้อสีน้ำเงินกรมท่า */
+    .rpg-header {
+      background: linear-gradient(180deg, #27447a 0%, #16294d 100%);
+      border-bottom: 2px solid #d4af37;
+      color: #ffffff;
+      text-shadow: 0 2px 3px rgba(0, 0, 0, 0.7);
+    }
+
+    /* การ์ดย่อยภายในหน้าต่าง */
+    .rpg-card {
+      background-color: #fcf8ee;
+      border: 2px solid #c5a059;
+      border-radius: 8px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ปุ่มสีน้ำเงินหลัก (เริ่มเกม / Guest Login) */
+    .rpg-btn-blue {
+      background: linear-gradient(180deg, #2e67c7 0%, #183d82 100%);
+      border: 2px solid #f0c95c;
+      box-shadow: 0 3px 0 #0d224a, inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      color: white;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+      transition: all 0.1s;
+    }
+    .rpg-btn-blue:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #0d224a;
+    }
+
+    /* ปุ่มสีครีมขอบทอง (ปุ่มรอง / ลบตัวละคร / ออกจากระบบ) */
+    .rpg-btn-cream {
+      background: linear-gradient(180deg, #ffffff 0%, #e8dec5 100%);
+      border: 2px solid #b89246;
+      box-shadow: 0 2px 0 #8c6d2e;
+      color: #3b2d1f;
+      transition: all 0.1s;
+    }
+    .rpg-btn-cream:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+
+    /* ปุ่มปิดหน้าต่าง [X] มุมขวาบน */
+    .rpg-close-btn {
+      background: linear-gradient(180deg, #c94a38 0%, #8a2315 100%);
+      border: 2px solid #f0c95c;
+      color: white;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    /* ป้ายชื่อตัวละคร / ป้ายสถานะ */
+    .rpg-ribbon {
+      background: linear-gradient(180deg, #233b6e 0%, #142447 100%);
+      border: 1.5px solid #d4af37;
+      color: #ffdf73;
+      border-radius: 999px;
+      padding: 2px 14px;
+      font-size: 0.85rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* ปุ่มสกิล / ช่องไอเทม */
+    .rpg-slot {
+      background: radial-gradient(circle, #303a4f 0%, #1a202c 100%);
+      border: 2px solid #d4af37;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #e8dec5; }
+    ::-webkit-scrollbar-thumb { background: #b89246; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- แถบเมนูสลับดูตัวอย่างหน้าจอ UI ทั้ง 6 แบบ -->
+  <nav class="bg-slate-900/90 border-b border-amber-500/40 p-2 flex flex-wrap justify-center gap-2 z-50">
+    <button onclick="switchScreen('login')" class="px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium">1. หน้า Log On & ประกาศ</button>
+    <button onclick="switchScreen('char-select')" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium">2. หน้าเลือกตัวละคร</button>
+    <button onclick="switchScreen('hud')" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium">3. หน้าจอเล่นเกม (HUD)</button>
+    <button onclick="switchScreen('world-map')" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium">4. แผนที่โลก (World Map)</button>
+    <button onclick="switchScreen('skill-tree')" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium">5. หน้าอัปสกิล (Skill Tree)</button>
+    <button onclick="switchScreen('passive')" class="px-3 py-1.5 rounded bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium">6. หน้า Passive ติดตัว</button>
+  </nav>
+
+  <!-- พื้นที่แสดงผลหลัก -->
+  <main class="flex-1 flex items-center justify-center p-4 overflow-auto">
+
+    <!-- ========================================== -->
+    <!-- 1. หน้า Log On & ประกาศ (IMG_4861)          -->
+    <!-- ========================================== -->
+    <section id="screen-login" class="screen-section w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- กล่องซ้าย: Log On -->
+      <div class="rpg-window flex flex-col justify-between">
+        <div>
+          <div class="rpg-header py-3 text-center font-bold text-lg tracking-wide">
+            ✦ Log On ✦
+          </div>
+          <div class="p-6 flex flex-col items-center space-y-4">
+            <h2 class="font-bold text-lg text-[#2b2118]">ยินดีต้อนรับ นักผจญภัย</h2>
+            
+            <button class="w-full py-2.5 px-4 bg-white border border-gray-300 rounded-lg shadow-sm flex items-center justify-center gap-3 font-medium text-gray-700 hover:bg-gray-50">
+              <span class="text-red-500 font-bold text-lg">G</span> Sign in with Google
+            </button>
+
+            <button class="w-full py-2.5 px-4 bg-black text-white rounded-lg shadow-sm flex items-center justify-center gap-3 font-medium hover:bg-gray-900">
+              <span></span> Sign in with Apple
+            </button>
+
+            <div class="w-full flex items-center gap-2 text-xs text-gray-500 my-1">
+              <div class="flex-1 border-t border-dashed border-amber-700/40"></div>
+              <span>หรือ</span>
+              <div class="flex-1 border-t border-dashed border-amber-700/40"></div>
+            </div>
+
+            <button class="rpg-btn-blue w-full py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2">
+              <span>👤</span> Guest Login
+            </button>
+
+            <p class="text-[11px] text-center text-gray-600 leading-relaxed">
+              เล่นแบบ Guest ได้ทันที แต่ตัวละครจะอยู่ในเบราว์เซอร์นี้เท่านั้น<br>
+              ล้างคุกกี้หรือเปลี่ยนเครื่องแล้วจะเข้าตัวเดิมไม่ได้ · ผูก Google เพื่อเก็บไว้ถาวร
+            </p>
+          </div>
+        </div>
+
+        <div class="p-4 pt-0">
+          <select class="rpg-header px-4 py-1.5 rounded-full text-sm border border-amber-400 outline-none cursor-pointer">
+            <option>🌐 ไทย</option>
+            <option>🌐 English</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- กล่องขวา: ประกาศ & บันทึกอัปเดต -->
+      <div class="rpg-window flex flex-col h-[460px]">
+        <div class="flex border-b-2 border-[#d4af37] bg-[#1c315e] text-sm">
+          <button class="flex-1 py-2.5 px-2 bg-[#f7f1e1] text-[#2b2118] font-bold flex items-center justify-center gap-1.5 rounded-tr-lg">
+            📢 ประกาศ <span class="bg-red-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">1</span>
+          </button>
+          <button class="flex-1 py-2.5 px-2 text-amber-100 hover:text-white flex items-center justify-center gap-1">
+            📜 บันทึกอัปเดต
+          </button>
+          <button class="flex-1 py-2.5 px-2 text-amber-100 hover:text-white flex items-center justify-center gap-1">
+            🔗 ลิงก์ทั้งหมด
+          </button>
+        </div>
+
+        <div class="p-4 overflow-y-auto space-y-3 flex-1">
+          <div class="font-bold text-amber-900 text-sm">เรื่องที่กำลังจะมีผล</div>
+          
+          <div class="rpg-card p-3.5 space-y-2 border-l-4 border-l-amber-500">
+            <div class="text-xs font-semibold text-gray-500">➡ การปรับเปลี่ยน</div>
+            <div class="font-bold text-base text-[#1c315e]">🪙 ตลาด Gold: ราคาตั้งค้างขยับเป็นขั้นเริ่มวันนี้</div>
+            <p class="text-xs text-gray-700 leading-relaxed">
+              ตั้งแต่วันนี้ ราคาคำสั่งตั้งรับซื้อและตั้งขาย Gold ต้องลงขั้น ราว 0.5–1% ของราคา เช่น ราคา 2,000–4,999 ขยับทีละ 20 Silver, 5,000–9,999 ทีละ 50 Silver<br><br>
+              ราคาเท่ากัน คำสั่งที่ตั้งก่อนได้จับคู่ก่อน จะแซงต้องขยับขึ้นทั้งขั้น วางแซงกันทีละ 1 Silver ไม่ได้แล้ว
+            </p>
+          </div>
+
+          <div class="rpg-card p-3 text-center font-bold text-sm text-amber-900 cursor-pointer hover:bg-amber-100/50">
+            แจ้งปัญหาการเล่น
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 2. หน้าเลือกตัวละคร (IMG_4862)              -->
+    <!-- ========================================== -->
+    <section id="screen-char-select" class="screen-section hidden w-full max-w-4xl">
+      <div class="rpg-window">
+        <div class="rpg-header py-3 text-center font-bold text-lg">
+          ✦✦✦ เลือกตัวละคร ✦✦✦
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+          <!-- ช่องตัวละครที่ 1 (มีตัวละคร) -->
+          <div class="rpg-card border-2 border-amber-500 p-3 flex flex-col items-center justify-between h-64 bg-gradient-to-b from-[#fffdf7] to-[#f2e6c9] shadow-md">
+            <div class="w-full bg-[#1c315e] text-amber-300 text-center text-xs font-bold py-1 rounded">
+              Lv.122
+            </div>
+            <!-- ตัวแทน Sprite ตัวละคร -->
+            <div class="w-20 h-24 bg-slate-800/10 rounded-lg flex items-center justify-center text-4xl border border-dashed border-amber-600/30">
+              🥷
+            </div>
+            <div class="text-center space-y-1">
+              <div class="rpg-ribbon font-bold">มังกรกินหมี่</div>
+              <div class="font-bold text-sm text-amber-950">Kensei</div>
+              <div class="text-[11px] text-gray-500">📍 Aurelia F...</div>
+            </div>
+          </div>
+
+          <!-- ช่องตัวละครที่ 2 (ว่าง) -->
+          <div class="rpg-card p-3 flex flex-col items-center justify-between h-64 opacity-90 hover:opacity-100 cursor-pointer">
+            <div class="w-full bg-slate-700 text-gray-200 text-center text-xs py-1 rounded">ช่องว่าง</div>
+            <div class="w-20 h-20 rounded-full border-4 border-[#c5a059] bg-[#efe6cf] flex items-center justify-center text-2xl text-amber-800 font-bold shadow-inner">
+              +
+            </div>
+            <div class="text-center space-y-1">
+              <div class="rpg-ribbon text-xs">สร้างตัวละคร</div>
+              <div class="text-xs text-gray-600">ตัวละครใหม่<br>เริ่มที่ Lv.1</div>
+            </div>
+          </div>
+
+          <!-- ช่องตัวละครที่ 3 (ว่าง) -->
+          <div class="rpg-card p-3 flex flex-col items-center justify-between h-64 opacity-90 hover:opacity-100 cursor-pointer">
+            <div class="w-full bg-slate-700 text-gray-200 text-center text-xs py-1 rounded">ช่องว่าง</div>
+            <div class="w-20 h-20 rounded-full border-4 border-[#c5a059] bg-[#efe6cf] flex items-center justify-center text-2xl text-amber-800 font-bold shadow-inner">
+              +
+            </div>
+            <div class="text-center space-y-1">
+              <div class="rpg-ribbon text-xs">สร้างตัวละคร</div>
+              <div class="text-xs text-gray-600">ตัวละครใหม่<br>เริ่มที่ Lv.1</div>
+            </div>
+          </div>
+
+          <!-- แผงควบคุมด้านขวา -->
+          <div class="flex flex-col items-center justify-between h-64 py-1 text-center">
+            <div class="space-y-1">
+              <div class="text-xs text-gray-600">บัญชี Google:</div>
+              <div class="text-xs font-bold text-[#1c315e] break-all">gusgung1997@gmail.com</div>
+              <div class="text-xs text-gray-700">ตัวละคร <span class="bg-[#1c315e] text-white px-2 py-0.5 rounded-full text-[11px]">1/3</span></div>
+            </div>
+
+            <div class="w-full space-y-2.5">
+              <button class="rpg-btn-blue w-full py-3 rounded-full font-bold text-lg">
+                ✦ เริ่มเกม ✦
+              </button>
+              <button class="rpg-btn-cream w-full py-1.5 rounded-lg text-xs font-semibold">
+                ลบตัวละคร
+              </button>
+            </div>
+
+            <div class="w-full pt-2 border-t border-dashed border-amber-700/30 space-y-1.5">
+              <div class="text-xs font-semibold text-gray-700">เปลี่ยนบัญชี Google</div>
+              <button class="rpg-btn-cream px-4 py-1 rounded text-xs">ออกจากระบบ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 3. หน้าจอเล่นเกม HUD (IMG_4863)             -->
+    <!-- ========================================== -->
+    <section id="screen-hud" class="screen-section hidden w-full max-w-5xl h-[540px] rounded-xl border-2 border-amber-500/50 relative overflow-hidden bg-gradient-to-br from-emerald-900/40 via-stone-800/60 to-slate-900/80 p-3 flex flex-col justify-between">
+      
+      <!-- แถบบน (ซ้าย: โปรไฟล์ / กลาง: เมนูหลัก / ขวา: มินิแมพ) -->
+      <div class="flex justify-between items-start gap-2">
+        
+        <!-- มุมซ้ายบน: ข้อมูลตัวละคร HP/SP/EXP -->
+        <div class="flex flex-col gap-2">
+          <div class="bg-[#16294d]/95 border-2 border-[#d4af37] rounded-lg p-2 flex items-center gap-2.5 shadow-lg w-64">
+            <div class="relative">
+              <div class="w-12 h-12 rounded-lg bg-slate-700 border-2 border-amber-400 flex items-center justify-center text-2xl">🥷</div>
+              <span class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-black/90 text-amber-300 text-[9px] px-1.5 rounded border border-amber-500 whitespace-nowrap">Lv.122</span>
+            </div>
+            <div class="flex-1 space-y-1">
+              <div class="flex justify-between items-center text-[11px] text-white font-bold">
+                <span>มังกรกินหมี่</span>
+                <span class="text-amber-300">🪙 799k</span>
+              </div>
+              <!-- HP Bar -->
+              <div class="w-full h-3 bg-gray-900 rounded-sm border border-gray-600 relative overflow-hidden">
+                <div class="bg-gradient-to-r from-red-700 to-red-500 h-full w-full"></div>
+                <span class="absolute inset-0 text-[9px] text-white text-center leading-3 font-semibold">4490 / 4490</span>
+              </div>
+              <!-- SP Bar -->
+              <div class="w-full h-3 bg-gray-900 rounded-sm border border-gray-600 relative overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-700 to-cyan-500 h-full w-full"></div>
+                <span class="absolute inset-0 text-[9px] text-white text-center leading-3 font-semibold">189 / 189</span>
+              </div>
+              <div class="flex justify-between text-[9px] text-amber-200">
+                <span>EXP 34.8%</span>
+                <span>Job Lv.70 · MAX</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ปุ่มลัดใต้โปรไฟล์ -->
+          <div class="flex gap-1.5">
+            <button class="w-8 h-8 rounded-full bg-[#16294d] border border-amber-400 text-white text-xs flex items-center justify-center">💬</button>
+            <button class="w-8 h-8 rounded-full bg-[#16294d] border border-amber-400 text-white text-xs flex items-center justify-center">⛶</button>
+            <button class="w-8 h-8 rounded-full bg-[#16294d] border border-amber-400 text-white text-xs flex items-center justify-center">👥</button>
+            <button class="w-8 h-8 rounded-full bg-[#16294d] border border-amber-400 text-white text-xs flex items-center justify-center">⏱️</button>
+          </div>
+        </div>
+
+        <!-- ตรงกลางบน: แถบเมนูไอคอนเกม -->
+        <div class="hidden md:flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-amber-500/30">
+          <div class="flex flex-col items-center text-white text-[10px] cursor-pointer hover:scale-105">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-lg relative">
+              🧑<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1 rounded-full">+1</span>
+            </div>
+            <span>สถานะ</span>
+          </div>
+          <div class="flex flex-col items-center text-white text-[10px] cursor-pointer hover:scale-105">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-lg relative">
+              📜<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1 rounded-full">+2</span>
+            </div>
+            <span>เควส</span>
+          </div>
+          <div class="flex flex-col items-center text-white text-[10px] cursor-pointer hover:scale-105">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-lg">🛡️</div>
+            <span>อุปกรณ์</span>
+          </div>
+          <div class="flex flex-col items-center text-white text-[10px] cursor-pointer hover:scale-105">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-lg relative">
+              🎒<span class="absolute -top-1 -right-1 bg-emerald-600 text-white text-[8px] px-1 rounded-full">3%</span>
+            </div>
+            <span>กระเป๋า</span>
+          </div>
+          <div class="flex flex-col items-center text-white text-[10px] cursor-pointer hover:scale-105">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-lg">🤖</div>
+            <span>บอท</span>
+          </div>
+          <div class="flex flex-col items-center text-white text-[10px] cursor-pointer hover:scale-105">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-lg">👑</div>
+            <span>Premium</span>
+          </div>
+          <div class="flex flex-col items-center text-white text-[10px] cursor-pointer hover:scale-105">
+            <div class="w-9 h-9 rounded-lg bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-lg">🎛️</div>
+            <span>เพิ่มเติม</span>
+          </div>
+        </div>
+
+        <!-- มุมขวาบน: Mini-map -->
+        <div class="bg-[#16294d]/95 border-2 border-[#d4af37] rounded-lg p-1.5 w-40 shadow-lg text-white">
+          <div class="flex justify-between items-center text-[10px] px-1 pb-1">
+            <span class="font-bold text-amber-300">CH 12 ▾</span>
+            <span>🗺️ ✕</span>
+          </div>
+          <div class="w-full h-24 bg-stone-300 rounded border border-amber-500/60 flex items-center justify-center text-xs text-stone-700 font-bold">
+            [Mini-Map]
+          </div>
+          <div class="text-center text-[11px] font-bold text-amber-300 mt-1">Aurelia Forum</div>
+          <div class="flex justify-around text-[10px] text-gray-200 border-t border-white/10 pt-0.5 mt-0.5">
+            <span>👥 19</span>
+            <span>⌖ 23,47</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- พื้นที่ตรงกลางฉาก (ตัวละครจำลอง) -->
+      <div class="flex flex-col items-center justify-center text-white">
+        <div class="text-4xl">🥷</div>
+        <div class="bg-black/60 px-2 py-0.5 rounded text-xs font-bold mt-1">มังกรกินหมี่</div>
+        <div class="text-[10px] text-amber-300">✦ ผู้บุกเบิก ✦</div>
+      </div>
+
+      <!-- แถบล่าง (ซ้าย: Joystick / ขวา: ปุ่มสกิล Action) -->
+      <div class="flex justify-between items-end">
+        <!-- ซ้ายล่าง: Virtual Joystick & Status -->
+        <div class="space-y-2">
+          <div class="w-28 h-28 rounded-full border-2 border-white/30 bg-white/10 backdrop-blur-xs flex items-center justify-center relative">
+            <div class="w-12 h-12 rounded-full bg-blue-500/60 border-2 border-cyan-300 shadow-[0_0_15px_rgba(56,189,248,0.8)]"></div>
+          </div>
+          <div class="bg-black/60 text-white text-[10px] px-2.5 py-1 rounded-full inline-flex items-center gap-2">
+            <span>03:54</span>
+            <span>📶 FPS 61 Ping 40 ms</span>
+            <span class="text-amber-300">👥 6,439</span>
+          </div>
+        </div>
+
+        <!-- ขวาล่าง: ปุ่มสกิล & โจมตี -->
+        <div class="flex items-end gap-2">
+          <div class="grid grid-cols-3 gap-2">
+            <button class="rpg-slot w-11 h-11 rounded-full text-white text-xs flex items-center justify-center">🎯</button>
+            <button class="rpg-slot w-11 h-11 rounded-full text-white text-xs flex items-center justify-center">🌀</button>
+            <button class="rpg-slot w-11 h-11 rounded-full text-white text-xs flex items-center justify-center">⚔️</button>
+            <button class="rpg-slot w-11 h-11 rounded-full text-red-400 text-xs flex items-center justify-center">🧪</button>
+            <button class="rpg-slot w-11 h-11 rounded-full text-blue-400 text-xs flex items-center justify-center">💧</button>
+            <button class="rpg-slot w-11 h-11 rounded-full text-amber-300 text-xs flex items-center justify-center">⚡</button>
+          </div>
+          <!-- ปุ่มโจมตีหลัก -->
+          <div class="flex flex-col items-center gap-2">
+            <button class="rpg-slot w-12 h-12 rounded-full text-amber-300 text-xs font-bold">AUTO</button>
+            <button class="w-16 h-16 rounded-full bg-gradient-to-b from-amber-400 to-amber-700 border-4 border-amber-200 shadow-lg flex items-center justify-center text-2xl">
+              🗡️
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 4. หน้าแผนที่โลก World Map (IMG_4864)       -->
+    <!-- ========================================== -->
+    <section id="screen-world-map" class="screen-section hidden w-full max-w-5xl">
+      <div class="rpg-window bg-[#14223d] text-white">
+        <div class="rpg-header py-2.5 px-4 flex justify-between items-center">
+          <div class="w-8"></div>
+          <div class="text-center">
+            <div class="font-bold text-base">🌐 แผนที่โลก</div>
+            <div class="text-[11px] text-amber-300">Aurelia Forum</div>
+          </div>
+          <button class="rpg-close-btn w-7 h-7 font-bold text-sm">✕</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 p-3 gap-3 bg-[#101c33]">
+          <!-- ฝั่งซ้าย: กริดแผนที่โลก -->
+          <div class="md:col-span-7 bg-[#0b1324] border border-amber-500/40 rounded-lg p-4 flex items-center justify-center min-h-[360px]">
+            <div class="grid grid-cols-4 gap-1.5 w-full max-w-md">
+              <div class="aspect-square bg-purple-950/80 border border-white/20 rounded p-1 text-[9px] flex items-end">Shadow Ruins</div>
+              <div class="aspect-square bg-slate-200 text-slate-900 border border-white/20 rounded p-1 text-[9px] flex items-end font-semibold">Frostveil Pass</div>
+              <div class="aspect-square bg-sky-200 text-slate-900 border border-white/20 rounded p-1 text-[9px] flex items-end font-semibold">Ice Glacier</div>
+              <div class="aspect-square bg-stone-700 border border-white/20 rounded p-1 text-[9px] flex items-end">Cinder Caldera</div>
+
+              <div class="aspect-square bg-emerald-950 border border-white/20 rounded p-1 text-[9px] flex items-end">Mire Marsh</div>
+              <!-- ช่องปัจจุบัน (กรอบเรืองแสงสีทอง) -->
+              <div class="aspect-square bg-amber-100 text-amber-950 border-2 border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.8)] rounded p-1 text-[9px] flex flex-col justify-between font-bold">
+                <span class="bg-blue-900 text-white px-1 rounded text-[8px] text-center">Aurelia Forum</span>
+                <span class="text-center text-xs">📍</span>
+              </div>
+              <div class="aspect-square bg-amber-700/80 border border-white/20 rounded p-1 text-[9px] flex items-end">Sunscar Desert</div>
+              <div class="aspect-square bg-orange-900/80 border border-white/20 rounded p-1 text-[9px] flex items-end">Iron Graveyard</div>
+
+              <div class="aspect-square bg-emerald-800 border border-white/20 rounded p-1 text-[9px] flex items-end">Elderwood</div>
+              <div class="aspect-square bg-green-700 border border-white/20 rounded p-1 text-[9px] flex items-end">Verdant Forest</div>
+              <div class="aspect-square bg-yellow-700 border border-white/20 rounded p-1 text-[9px] flex items-end">Meadow</div>
+              <div class="aspect-square bg-red-900 border border-white/20 rounded p-1 text-[9px] flex items-end">Crimson Dune</div>
+            </div>
+          </div>
+
+          <!-- ฝั่งขวา: รายละเอียดโซนและรายชื่อ NPC -->
+          <div class="md:col-span-5 bg-[#16294d] border border-amber-500/40 rounded-lg p-3 flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex justify-between items-start border-b border-white/15 pb-2">
+                <div>
+                  <h3 class="font-bold text-lg text-amber-300">🏛️ Aurelia Forum</h3>
+                  <p class="text-[11px] text-gray-300">เมืองหลวง · อะโกรา อะโครโพลิส และโรงละคร</p>
+                </div>
+                <span class="bg-blue-950 border border-amber-400/50 text-[10px] px-2 py-0.5 rounded">เมือง</span>
+              </div>
+
+              <!-- ประตูเชื่อมไป -->
+              <div class="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                <span class="bg-slate-900/80 px-2 py-0.5 rounded border border-emerald-500/40">🟢 Verdant Forest Lv.1-10</span>
+                <span class="bg-slate-900/80 px-2 py-0.5 rounded border border-sky-500/40">🔵 Frostveil Pass Lv.21-30</span>
+              </div>
+
+              <!-- รายชื่อ NPC -->
+              <div class="mt-3">
+                <div class="flex justify-between text-xs font-bold text-amber-200 mb-1.5">
+                  <span>NPC</span>
+                  <span class="bg-blue-900 px-2 rounded-full">10</span>
+                </div>
+                <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  <div class="bg-[#0f1d38] p-2 rounded border border-white/10 flex items-center gap-2 hover:border-amber-400 cursor-pointer">
+                    <span>💰</span>
+                    <div>
+                      <div class="text-xs font-bold text-white">พ่อค้า Silver</div>
+                      <div class="text-[10px] text-gray-400">ซื้อ-ขายไอเทม ยา และแร่</div>
+                    </div>
+                  </div>
+                  <div class="bg-[#0f1d38] p-2 rounded border border-white/10 flex items-center gap-2 hover:border-amber-400 cursor-pointer">
+                    <span>⚖️</span>
+                    <div>
+                      <div class="text-xs font-bold text-white">นายหน้าตลาด (Market)</div>
+                      <div class="text-[10px] text-gray-400">ตลาดกลาง · ตั้งซื้อ-ขาย</div>
+                    </div>
+                  </div>
+                  <div class="bg-[#0f1d38] p-2 rounded border border-white/10 flex items-center gap-2 hover:border-amber-400 cursor-pointer">
+                    <span>📦</span>
+                    <div>
+                      <div class="text-xs font-bold text-white">เจ้าหน้าที่คลัง</div>
+                      <div class="text-[10px] text-gray-400">ฝาก-ถอนของในคลัง</div>
+                    </div>
+                  </div>
+                  <div class="bg-[#0f1d38] p-2 rounded border border-white/10 flex items-center gap-2 hover:border-amber-400 cursor-pointer">
+                    <span>🔨</span>
+                    <div>
+                      <div class="text-xs font-bold text-white">ช่างตีบวก +10</div>
+                      <div class="text-[10px] text-gray-400">ตีบวกอาวุธและเกราะ</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t border-white/10">
+              <p class="text-[10px] text-gray-300 flex-1 pr-2">เมืองหลวงแบบโรมันในกำแพงอิฐใจกลางทวีป</p>
+              <button class="bg-slate-700 text-gray-300 text-xs px-3 py-1.5 rounded border border-gray-500">คุณอยู่ที่นี่</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 5. หน้าอัปสกิล Skill Tree (IMG_4865)        -->
+    <!-- ========================================== -->
+    <section id="screen-skill-tree" class="screen-section hidden w-full max-w-3xl">
+      <div class="rpg-window">
+        <!-- หัวหน้าต่าง -->
+        <div class="flex justify-between items-center px-5 py-3 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#f7f1e1] via-[#fffdf7] to-[#e8dec5]">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">📘</span>
+            <h2 class="font-bold text-xl text-[#2b2118]">Skill Tree · อัปสกิล</h2>
+          </div>
+          <button class="rpg-close-btn w-8 h-8 font-bold">✕</button>
+        </div>
+
+        <div class="p-4 space-y-4">
+          <!-- หมวด Active -->
+          <div>
+            <div class="rpg-header px-3 py-1.5 rounded-t-lg text-sm font-bold flex items-center gap-2">
+              <span>💠</span> Active · สกิลใช้งาน
+            </div>
+            <div class="bg-[#efe6cf] p-3 rounded-b-lg border border-t-0 border-[#c5a059] grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+              <!-- สกิลที่เลือกอยู่ -->
+              <div class="rpg-card border-2 border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.5)] p-2 flex flex-col items-center relative bg-white">
+                <span class="absolute -top-2 right-1 bg-sky-500 text-white text-[9px] px-1.5 rounded font-bold">SELECTED</span>
+                <div class="font-bold text-xs mb-1">Iaigiri</div>
+                <div class="w-12 h-12 rounded-lg bg-slate-100 border border-amber-400 flex items-center justify-center text-2xl mb-1.5">🗡️</div>
+                <div class="flex items-center gap-1 text-xs font-bold">
+                  <button class="w-5 h-5 bg-slate-200 rounded">-</button>
+                  <span>10/10</span>
+                  <button class="w-5 h-5 bg-slate-200 rounded">+</button>
+                </div>
+                <div class="mt-1 bg-[#e5d7b5] text-[10px] px-2 py-0.5 rounded-full font-semibold text-amber-950">เรียนแล้ว · Lv.10</div>
+              </div>
+
+              <!-- สกิลอื่น -->
+              <div class="rpg-card p-2 flex flex-col items-center">
+                <div class="font-bold text-xs mb-1">Oboro Ranbu</div>
+                <div class="w-12 h-12 rounded-lg bg-slate-100 border border-amber-400 flex items-center justify-center text-2xl mb-1.5">🌀</div>
+                <div class="flex items-center gap-1 text-xs font-bold">
+                  <button class="w-5 h-5 bg-slate-200 rounded">-</button>
+                  <span>10/10</span>
+                  <button class="w-5 h-5 bg-slate-200 rounded">+</button>
+                </div>
+                <div class="mt-1 bg-[#e5d7b5] text-[10px] px-2 py-0.5 rounded-full font-semibold text-amber-950">เรียนแล้ว · Lv.10</div>
+              </div>
+
+              <div class="rpg-card p-2 flex flex-col items-center">
+                <div class="font-bold text-xs mb-1">Issen</div>
+                <div class="w-12 h-12 rounded-lg bg-slate-100 border border-amber-400 flex items-center justify-center text-2xl mb-1.5">⚡</div>
+                <div class="flex items-center gap-1 text-xs font-bold">
+                  <button class="w-5 h-5 bg-slate-200 rounded">-</button>
+                  <span>10/10</span>
+                  <button class="w-5 h-5 bg-slate-200 rounded">+</button>
+                </div>
+                <div class="mt-1 bg-[#e5d7b5] text-[10px] px-2 py-0.5 rounded-full font-semibold text-amber-950">เรียนแล้ว · Lv.10</div>
+              </div>
+
+              <div class="rpg-card p-2 flex flex-col items-center">
+                <div class="font-bold text-xs mb-1">Meikyo Shisui</div>
+                <div class="w-12 h-12 rounded-lg bg-slate-100 border border-amber-400 flex items-center justify-center text-2xl mb-1.5">🔮</div>
+                <div class="flex items-center gap-1 text-xs font-bold">
+                  <button class="w-5 h-5 bg-slate-200 rounded">-</button>
+                  <span>10/10</span>
+                  <button class="w-5 h-5 bg-slate-200 rounded">+</button>
+                </div>
+                <div class="mt-1 bg-[#e5d7b5] text-[10px] px-2 py-0.5 rounded-full font-semibold text-amber-950">เรียนแล้ว · Lv.10</div>
+              </div>
+
+              <div class="rpg-card p-2 flex flex-col items-center opacity-75">
+                <div class="font-bold text-xs mb-1">Mirror Parry</div>
+                <div class="w-12 h-12 rounded-lg bg-slate-100 border border-gray-300 flex items-center justify-center text-2xl mb-1.5">🛡️</div>
+                <div class="flex items-center gap-1 text-xs font-bold">
+                  <button class="w-5 h-5 bg-slate-200 rounded">-</button>
+                  <span>0/10</span>
+                  <button class="w-5 h-5 bg-slate-200 rounded">+</button>
+                </div>
+                <div class="mt-1 bg-gray-200 text-[10px] px-2 py-0.5 rounded-full text-gray-600">ยังไม่เรียน</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- หมวด Passive -->
+          <div>
+            <div class="rpg-header px-3 py-1.5 rounded-t-lg text-sm font-bold flex justify-between items-center">
+              <span>💠 Passive · สกิลฝังตัว</span>
+              <button onclick="switchScreen('passive')" class="bg-amber-400 text-slate-950 text-xs px-2.5 py-0.5 rounded-full font-bold hover:bg-amber-300">
+                Passive ติดตัว 4/4
+              </button>
+            </div>
+            <div class="bg-[#efe6cf] p-3 rounded-b-lg border border-t-0 border-[#c5a059] grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+              <div class="rpg-card p-2 flex flex-col items-center">
+                <div class="font-bold text-xs mb-1">Katana Mastery</div>
+                <div class="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-xl">⚔️</div>
+                <div class="mt-1 text-[10px] font-bold">10/10 · Lv.10</div>
+              </div>
+              <div class="rpg-card p-2 flex flex-col items-center">
+                <div class="font-bold text-xs mb-1">Shukuchi</div>
+                <div class="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-xl">👟</div>
+                <div class="mt-1 text-[10px] font-bold">10/10 · Lv.10</div>
+              </div>
+              <div class="rpg-card p-2 flex flex-col items-center">
+                <div class="font-bold text-xs mb-1">Zanshin</div>
+                <div class="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-xl">🩸</div>
+                <div class="mt-1 text-[10px] font-bold">10/10 · Lv.10</div>
+              </div>
+              <div class="rpg-card p-2 flex flex-col items-center opacity-70">
+                <div class="font-bold text-xs mb-1">Kasumi Edge</div>
+                <div class="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-xl">🌪️</div>
+                <div class="mt-1 text-[10px]">0/10</div>
+              </div>
+              <div class="rpg-card p-2 flex flex-col items-center opacity-70">
+                <div class="font-bold text-xs mb-1">Akatsuki</div>
+                <div class="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-xl">☀️</div>
+                <div class="mt-1 text-[10px]">0/10</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- กล่องคำอธิบายสกิลด้านล่าง -->
+          <div class="rpg-card p-3.5 flex gap-3 items-start bg-white">
+            <div class="w-16 h-16 rounded-lg border-2 border-amber-400 bg-slate-50 flex items-center justify-center text-3xl shrink-0">🗡️</div>
+            <div class="flex-1">
+              <div class="flex justify-between items-center">
+                <h3 class="font-bold text-base text-[#1c315e]">Iaigiri · Lv.10</h3>
+                <span class="bg-[#efe6cf] border border-amber-600/40 text-xs px-2 py-0.5 rounded font-semibold">📜 ตำนาน</span>
+              </div>
+              <p class="text-xs text-gray-700 mt-1 leading-relaxed">
+                ชักดาบฟันเป้าหมายเดียว 480% ATK · ระยะ 72 · ติดคริติคอลได้ตามค่าคริของตัวละคร · ไม่มีธาตุ ใช้ธาตุเดียวกับการตีปกติ · SP 7 · CD ตามความเร็วโจมตี (ASPD)
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- แถบ Skill Point & Hotbar ล่างสุด -->
+        <div class="rpg-header px-4 py-2.5 flex flex-wrap justify-between items-center gap-2">
+          <div class="font-bold text-amber-300 text-sm">✦ Skill Point: 0</div>
+          <div class="flex gap-1">
+            <button class="w-7 h-7 rounded bg-amber-100 text-slate-900 font-bold text-xs">1</button>
+            <button class="w-7 h-7 rounded bg-blue-600 text-white border border-amber-300 font-bold text-xs">2</button>
+            <button class="w-7 h-7 rounded bg-amber-100 text-slate-900 font-bold text-xs">3</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 6. หน้า Passive ติดตัว (IMG_4866)           -->
+    <!-- ========================================== -->
+    <section id="screen-passive" class="screen-section hidden w-full max-w-xl">
+      <div class="rpg-window">
+        <div class="rpg-header py-3 px-4 flex justify-between items-center">
+          <div class="w-7"></div>
+          <div class="font-bold text-base">✦ Passive ติดตัว ✦</div>
+          <button onclick="switchScreen('skill-tree')" class="rpg-close-btn w-7 h-7 font-bold text-sm">✕</button>
+        </div>
+
+        <div class="p-4 space-y-4">
+          <!-- ช่อง Passive ที่สวมใส่ -->
+          <div>
+            <div class="rpg-header px-3 py-1.5 rounded-t-lg text-sm font-bold flex justify-between">
+              <span>ช่อง Passive</span>
+              <span>4 / 4</span>
+            </div>
+            <div class="bg-[#fcf8ee] border border-t-0 border-[#c5a059] rounded-b-lg p-3 space-y-3">
+              <!-- สลับเซ็ต 1 2 3 -->
+              <div class="flex justify-center gap-2">
+                <button class="w-8 h-8 rounded rpg-btn-cream font-bold text-xs">1</button>
+                <button class="w-8 h-8 rounded rpg-btn-blue font-bold text-xs">2</button>
+                <button class="w-8 h-8 rounded rpg-btn-cream font-bold text-xs">3</button>
+              </div>
+
+              <!-- 6 ช่องสกิล (เปิด 4, ล็อค 2) -->
+              <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center">
+                <div class="flex flex-col items-center">
+                  <div class="w-12 h-12 rounded-lg border-2 border-blue-600 bg-white flex items-center justify-center text-2xl shadow-sm">🏋️</div>
+                  <div class="text-[10px] font-bold mt-1 truncate w-full">Weight Tr...</div>
+                  <div class="text-[9px] text-gray-500">Merchant</div>
+                </div>
+                <div class="flex flex-col items-center">
+                  <div class="w-12 h-12 rounded-lg border-2 border-blue-600 bg-white flex items-center justify-center text-2xl shadow-sm">🗡️</div>
+                  <div class="text-[10px] font-bold mt-1 truncate w-full">Twin Strike</div>
+                  <div class="text-[9px] text-gray-500">Thief · Lv.10</div>
+                </div>
+                <div class="flex flex-col items-center">
+                  <div class="w-12 h-12 rounded-lg border-2 border-blue-600 bg-white flex items-center justify-center text-2xl shadow-sm">👁️</div>
+                  <div class="text-[10px] font-bold mt-1 truncate w-full">Fatal Sense</div>
+                  <div class="text-[9px] text-gray-500">Thief · Lv.10</div>
+                </div>
+                <div class="flex flex-col items-center">
+                  <div class="w-12 h-12 rounded-lg border-2 border-blue-600 bg-white flex items-center justify-center text-2xl shadow-sm">🛡️</div>
+                  <div class="text-[10px] font-bold mt-1 truncate w-full">Close-Co...</div>
+                  <div class="text-[9px] text-gray-500">Swordsman</div>
+                </div>
+                <div class="flex flex-col items-center opacity-60">
+                  <div class="w-12 h-12 rounded-lg border-2 border-gray-400 bg-gray-200 flex items-center justify-center text-xl">🔒</div>
+                  <div class="text-[10px] font-bold mt-1">ล็อคอยู่</div>
+                  <div class="text-[9px] text-gray-500">ยังไม่เปิดให้ใช้</div>
+                </div>
+                <div class="flex flex-col items-center opacity-60">
+                  <div class="w-12 h-12 rounded-lg border-2 border-gray-400 bg-gray-200 flex items-center justify-center text-xl">🔒</div>
+                  <div class="text-[10px] font-bold mt-1">ล็อคอยู่</div>
+                  <div class="text-[9px] text-gray-500">ยังไม่เปิดให้ใช้</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- รายการ Passive จากอาชีพอื่น -->
+          <div>
+            <div class="rpg-header px-3 py-1.5 rounded-t-lg text-sm font-bold">
+              Passive จากอาชีพอื่น
+            </div>
+            <div class="bg-[#efe6cf] border border-t-0 border-[#c5a059] rounded-b-lg p-2 space-y-1.5 max-h-60 overflow-y-auto">
+              <div class="rpg-card px-3 py-2 flex justify-between items-center bg-white">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">🛡️</span>
+                  <div>
+                    <div class="font-bold text-xs">Close-Combat Mastery</div>
+                    <div class="text-[10px] text-gray-500">Swordsman · Lv.10</div>
+                  </div>
+                </div>
+                <span class="bg-[#1c315e] text-white text-[10px] px-2.5 py-1 rounded-full font-semibold">อยู่ในช่อง</span>
+              </div>
+
+              <div class="rpg-card px-3 py-2 flex justify-between items-center bg-white">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">💚</span>
+                  <div>
+                    <div class="font-bold text-xs">Vigor</div>
+                    <div class="text-[10px] text-gray-500">Swordsman · Lv.10</div>
+                  </div>
+                </div>
+                <span class="bg-gray-200 text-gray-600 text-[10px] px-2.5 py-1 rounded-full">ไม่ติดตัว</span>
+              </div>
+
+              <div class="rpg-card px-3 py-2 flex justify-between items-center bg-white">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">🦾</span>
+                  <div>
+                    <div class="font-bold text-xs">Iron Body</div>
+                    <div class="text-[10px] text-gray-500">Swordsman · Lv.10</div>
+                  </div>
+                </div>
+                <span class="bg-gray-200 text-gray-600 text-[10px] px-2.5 py-1 rounded-full">ไม่ติดตัว</span>
+              </div>
+
+              <div class="rpg-card px-3 py-2 flex justify-between items-center bg-white">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">💧</span>
+                  <div>
+                    <div class="font-bold text-xs">Meditation</div>
+                    <div class="text-[10px] text-gray-500">Mage · Lv.10</div>
+                  </div>
+                </div>
+                <span class="bg-gray-200 text-gray-600 text-[10px] px-2.5 py-1 rounded-full">ไม่ติดตัว</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function switchScreen(screenId) {
+      // ซ่อนทุกหน้าจอ
+      document.querySelectorAll('.screen-section').forEach(el => {
+        el.classList.add('hidden');
+      });
+      // แสดงหน้าที่เลือก
+      document.getElementById('screen-' + screenId).classList.remove('hidden');
+      
+      // อัปเดตสีปุ่มเมนูด้านบน
+      document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.remove('bg-amber-600');
+        btn.classList.add('bg-slate-700');
+      });
+      event.target.classList.remove('bg-slate-700');
+      event.target.classList.add('bg-amber-600');
+    }
+  </script>
+</body>
+</html>
